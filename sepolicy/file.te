@@ -1,0 +1,8 @@
+# Filesystems
+type exfat, sdcard_type, fs_type, mlstrustedobject;
+type ntfs, sdcard_type, fs_type, mlstrustedobject;
+
+# Performance settings
+type sysfs_devices_system_iosched, file_type, sysfs_type;
+
+

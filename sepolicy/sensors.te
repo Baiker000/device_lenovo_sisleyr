@@ -1,0 +1,13 @@
+allow sensors sensors_data_file:fifo_file create_file_perms;
+allow sensors sysfs:file rw_file_perms;
+allow sensors input_device:dir r_dir_perms;
+allow sensors input_device:chr_file r_file_perms;
+allow sensors shell:file { read open };
+allow sensors shell:dir { search };
+allow sensors shell:lnk_file { read };
+allow sensors audioserver:file { read open };
+allow sensors audioserver:dir { search };
+allow sensors audioserver:lnk_file { read };
+allow sensors zygote:file { read open };
+allow sensors zygote:dir { search };
+allow sensors zygote:lnk_file { read };
