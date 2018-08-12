@@ -1,0 +1,119 @@
+# Copyright (c) 2009-2012, 2014, The Linux Foundation. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#     * Redistributions of source code must retain the above copyright
+#       notice, this list of conditions and the following disclaimer.
+#     * Redistributions in binary form must reproduce the above copyright
+#       notice, this list of conditions and the following disclaimer in the
+#       documentation and/or other materials provided with the distribution.
+#     * Neither the name of The Linux Foundation nor
+#       the names of its contributors may be used to endorse or promote
+#       products derived from this software without specific prior written
+#       permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+# NON-INFRINGEMENT ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+on early-init
+    #set non-stand-charger can used
+    write /sys/module/phy_msm_usb/parameters/floated_charger_enable Y
+
+on boot
+    # charger
+    chown system system /sys/bus/i2c/drivers/lc709203/batt_capacity
+    chmod 0660 /sys/bus/i2c/drivers/lc709203/batt_capacity
+    chown root system /sys/class/power_supply/bms/current_now
+    chown root system /sys/class/power_supply/bms/voltage_ocv
+    chmod 0664 /sys/class/power_supply/bms/current_now
+    chmod 0664 /sys/class/power_supply/bms/voltage_ocv
+
+    # Notification LED
+    chown system system /sys/class/leds/red/blink
+    chown system system /sys/class/leds/green/blink
+    chown system system /sys/class/leds/blue/blink
+    chown system system /sys/class/leds/red/led_time
+    chown system system /sys/class/leds/green/led_time
+    chown system system /sys/class/leds/blue/led_time
+	chmod 0664 /sys/class/leds/torch-light/brightness
+	chown system system /sys/class/leds/torch-light/brightness
+	restorecon /sys/class/leds/torch-light/brightness
+
+    chown system system /sys/devices/virtual/graphics/fb0/bl_level
+    chmod 0664 /sys/devices/virtual/graphics/fb0/bl_level
+
+#sensor
+    chown system input /sys/bus/i2c/devices/0-0041/enable_ps_sensor
+    chown system input /sys/bus/i2c/devices/0-0041/enable_als_sensor
+    chown system input /sys/bus/i2c/devices/0-0041/als_poll_delay
+    chown system input /sys/bus/i2c/devices/0-0041/pdata
+    chown system input /sys/bus/i2c/devices/0-0041/pilt
+    chown system input /sys/bus/i2c/devices/0-0041/piht
+    chown system input /sys/bus/i2c/devices/0-0041/type
+    chown system input /sys/bus/i2c/devices/0-0041/als_data
+    chown system input /sys/bus/i2c/devices/0-0041/pscali
+    chown system system /persist/prox_threshold_lo
+    chown system system /persist/prox_threshold_hi
+    chmod 0666 /persist/prox_threshold_lo
+    chmod 0666 /persist/prox_threshold_hi
+    restorecon /sys/bus/i2c/devices/0-0041/pilt
+    restorecon /sys/bus/i2c/devices/0-0041/piht
+    chown system input /sys/class/input/input3/enable_device
+    chown system input /sys/class/input/input3/delay
+    chown system input /sys/class/input/input3/gsensor_cali_x
+    chown system input /sys/class/input/input3/gsensor_cali_y
+    chown system input /sys/class/input/input3/gsensor_cali_z
+    chown system system /persist/gsensor_cali_val_x
+    chown system system /persist/gsensor_cali_val_y
+    chown system system /persist/gsensor_cali_val_z
+    chmod 0666 /persist/gsensor_cali_val_x
+    chmod 0666 /persist/gsensor_cali_val_y
+    chmod 0666 /persist/gsensor_cali_val_z
+    restorecon /sys/class/input/input3/gsensor_cali_x
+    restorecon /sys/class/input/input3/gsensor_cali_y
+    restorecon /sys/class/input/input3/gsensor_cali_z
+
+#touchscreen
+    chown system system /sys/board_properties/tpd_suspend_status
+    chmod 0664 /sys/board_properties/tpd_suspend_status
+    chown system system /sys/board_properties/lenovo_flag
+    chmod 0664 /sys/board_properties/lenovo_flag
+
+service vm_bms /system/vendor/bin/vm_bms
+    class core
+    user root
+    group root
+
+on charger
+   wait /dev/block/bootdevice/by-name/system
+   mount ext4 /dev/block/bootdevice/by-name/system /system ro barrier=1
+   chown root system /sys/class/power_supply/bms/current_now
+   chown root system /sys/class/power_supply/bms/voltage_ocv
+   chmod 0664 /sys/class/power_supply/bms/current_now
+   chmod 0664 /sys/class/power_supply/bms/voltage_ocv
+   start vm_bms
+
+service sensord /system/vendor/bin/sensord
+    class main
+    user root
+
+on property:init.svc.zygote=restarting
+    restart sensord
+
+service calibacc /system/vendor/bin/accelcal
+    class main
+    oneshot
+    disabled
+
+on property:sys.sensors.acc=*
+    start calibacc
